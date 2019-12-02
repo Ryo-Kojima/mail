@@ -7,6 +7,9 @@
 //
 
 import UIKit
+import Firebase
+import FirebaseAuth
+import FirebaseDatabase
 
 class LoginController: UIViewController {
     
@@ -19,15 +22,50 @@ class LoginController: UIViewController {
         return view
     }()
     
-    let Loginbutton : UIButton = {
+    lazy var Loginbutton : UIButton = {
         let btn = UIButton(type: .system)
         btn.backgroundColor = UIColor(r: 25, g: 40, b: 50)
         btn.setTitle("Login", for: .normal)
         btn.setTitleColor(UIColor.white, for: .normal)
         btn.titleLabel?.font = UIFont.boldSystemFont(ofSize: 15)
+        btn.addTarget(self, action: #selector(handleLogin), for: .touchUpInside)
         btn.translatesAutoresizingMaskIntoConstraints = false
         return btn
     }()
+    
+    @objc func handleLogin() {
+        guard let email = Emailtext.text, let pass = Passtext.text, let name = Nametext.text
+            else {
+              print("From is not valid")
+              return
+        }
+        
+        Auth.auth().createUser(withEmail: email, password: pass, completion: {(user, error) in
+            
+            if error != nil {
+                print(error!)
+                return
+            }
+            guard let result = user else {
+                return
+            }
+            let uid = result.user.uid
+            
+            let ref = Database.database().reference(fromURL: "https://mail-91b5e.firebaseio.com/")
+            let usersReference = ref.child("users").child(uid)
+            let values = ["name": name, "email": email]
+            usersReference.updateChildValues(values, withCompletionBlock: {
+                (err,ref) in
+                
+                if err != nil {
+                    print(err)
+                    return
+                }
+                print("Save User Data")
+            })
+        })
+    }
+    
 
     let Nametext : UITextField = {
         let tf = UITextField()
